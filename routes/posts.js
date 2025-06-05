@@ -165,4 +165,75 @@ router.get('/:id/comments', async (req, res) => {
   res.json(data);
 });
 
+
+// ✅ 댓글 수정
+router.patch('/:id/comments/:commentId', async (req, res) => {
+  const { commentId } = req.params;
+  const { content, author } = req.body;
+
+  if (!content || !author) {
+    return res.status(400).json({ error: '수정할 댓글 내용과 작성자 정보가 필요합니다.' });
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('johnwick_board_comments')
+    .select('author')
+    .eq('id', commentId)
+    .single();
+
+  if (fetchError || !existing) {
+    return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
+  }
+
+  if (existing.author !== author) {
+    return res.status(403).json({ error: '작성자만 수정할 수 있습니다.' });
+  }
+
+  const { data, error } = await supabase
+    .from('johnwick_board_comments')
+    .update({ content })
+    .eq('id', commentId)
+    .select()
+    .single();
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json(data);
+});
+
+// ✅ 댓글 삭제
+router.delete('/:id/comments/:commentId', async (req, res) => {
+  const { commentId } = req.params;
+  const { author } = req.body;
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('johnwick_board_comments')
+    .select('author')
+    .eq('id', commentId)
+    .single();
+
+  if (fetchError || !existing) {
+    return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
+  }
+
+  if (existing.author !== author) {
+    return res.status(403).json({ error: '작성자만 삭제할 수 있습니다.' });
+  }
+
+  const { error } = await supabase
+    .from('johnwick_board_comments')
+    .delete()
+    .eq('id', commentId);
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ message: '삭제 완료' });
+});
+
+
+
 module.exports = router;
