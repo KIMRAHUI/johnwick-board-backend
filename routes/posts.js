@@ -3,14 +3,13 @@ const router = express.Router();
 const supabase = require('../supabaseClient');
 
 // ✅ 게시글 전체 조회
-router.get('/posts', async (req, res) => {
+router.get('/', async (req, res) => {
   const { data, error } = await supabase
     .from('johnwick_board_posts')
     .select('*')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('게시글 조회 실패:', error.message);
     return res.status(500).json({ error: error.message });
   }
 
@@ -18,7 +17,7 @@ router.get('/posts', async (req, res) => {
 });
 
 // ✅ 게시글 등록
-router.post('/posts', async (req, res) => {
+router.post('/', async (req, res) => {
   const { title, content, author, access_code } = req.body;
 
   if (!title || !content || !author || !access_code) {
@@ -39,8 +38,8 @@ router.post('/posts', async (req, res) => {
   res.status(201).json(data);
 });
 
-// ✅ 게시글 삭제 (요원 코드 확인)
-router.delete('/posts/:id', async (req, res) => {
+// ✅ 게시글 삭제
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const { access_code } = req.body;
 
@@ -58,7 +57,10 @@ router.delete('/posts/:id', async (req, res) => {
     return res.status(403).json({ error: '요원 코드가 일치하지 않습니다.' });
   }
 
-  const { error } = await supabase.from('johnwick_board_posts').delete().eq('id', id);
+  const { error } = await supabase
+    .from('johnwick_board_posts')
+    .delete()
+    .eq('id', id);
 
   if (error) {
     console.error('삭제 실패:', error.message);
@@ -69,7 +71,7 @@ router.delete('/posts/:id', async (req, res) => {
 });
 
 // ✅ 게시글 수정
-router.put('/posts/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { title, content, access_code } = req.body;
 
@@ -103,7 +105,7 @@ router.put('/posts/:id', async (req, res) => {
 });
 
 // ✅ 좋아요/싫어요
-router.patch('/posts/:id/reactions', async (req, res) => {
+router.patch('/:id/reactions', async (req, res) => {
   const { id } = req.params;
   const { likes, dislikes } = req.body;
 
@@ -123,7 +125,7 @@ router.patch('/posts/:id/reactions', async (req, res) => {
 });
 
 // ✅ 댓글 등록
-router.post('/posts/:id/comments', async (req, res) => {
+router.post('/:id/comments', async (req, res) => {
   const { id } = req.params;
   const { content, author } = req.body;
 
@@ -146,7 +148,7 @@ router.post('/posts/:id/comments', async (req, res) => {
 });
 
 // ✅ 댓글 조회
-router.get('/posts/:id/comments', async (req, res) => {
+router.get('/:id/comments', async (req, res) => {
   const { id } = req.params;
 
   const { data, error } = await supabase
