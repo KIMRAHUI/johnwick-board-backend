@@ -124,18 +124,18 @@ router.patch('/:id/reactions', async (req, res) => {
   res.json(data);
 });
 
-// ✅ 댓글 등록
+// ✅ 댓글 등록 (access_code 포함)
 router.post('/:id/comments', async (req, res) => {
   const { id } = req.params;
-  const { content, author } = req.body;
+  const { content, author, access_code } = req.body;
 
-  if (!content || !author) {
-    return res.status(400).json({ error: '댓글 내용과 작성자 필수입니다.' });
+  if (!content || !author || !access_code) {
+    return res.status(400).json({ error: '댓글 내용, 작성자, 전용 코드가 필요합니다.' });
   }
 
   const { data, error } = await supabase
     .from('johnwick_board_comments')
-    .insert([{ post_id: id, content, author }])
+    .insert([{ post_id: id, content, author, access_code }])
     .select()
     .single();
 
@@ -165,19 +165,18 @@ router.get('/:id/comments', async (req, res) => {
   res.json(data);
 });
 
-
-// ✅ 댓글 수정
+// ✅ 댓글 수정 (access_code 검증 추가)
 router.patch('/:id/comments/:commentId', async (req, res) => {
   const { commentId } = req.params;
-  const { content, author } = req.body;
+  const { content, author, access_code } = req.body;
 
-  if (!content || !author) {
-    return res.status(400).json({ error: '수정할 댓글 내용과 작성자 정보가 필요합니다.' });
+  if (!content || !author || !access_code) {
+    return res.status(400).json({ error: '수정할 댓글 내용, 작성자, 전용 코드가 필요합니다.' });
   }
 
   const { data: existing, error: fetchError } = await supabase
     .from('johnwick_board_comments')
-    .select('author')
+    .select('author, access_code')
     .eq('id', commentId)
     .single();
 
@@ -185,8 +184,8 @@ router.patch('/:id/comments/:commentId', async (req, res) => {
     return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
   }
 
-  if (existing.author !== author) {
-    return res.status(403).json({ error: '작성자만 수정할 수 있습니다.' });
+  if (existing.author !== author || existing.access_code !== access_code) {
+    return res.status(403).json({ error: '작성자 또는 전용 코드가 일치하지 않습니다.' });
   }
 
   const { data, error } = await supabase
@@ -203,14 +202,14 @@ router.patch('/:id/comments/:commentId', async (req, res) => {
   res.json(data);
 });
 
-// ✅ 댓글 삭제
+// ✅ 댓글 삭제 (access_code 검증 추가)
 router.delete('/:id/comments/:commentId', async (req, res) => {
   const { commentId } = req.params;
-  const { author } = req.body;
+  const { author, access_code } = req.body;
 
   const { data: existing, error: fetchError } = await supabase
     .from('johnwick_board_comments')
-    .select('author')
+    .select('author, access_code')
     .eq('id', commentId)
     .single();
 
@@ -218,8 +217,8 @@ router.delete('/:id/comments/:commentId', async (req, res) => {
     return res.status(404).json({ error: '댓글을 찾을 수 없습니다.' });
   }
 
-  if (existing.author !== author) {
-    return res.status(403).json({ error: '작성자만 삭제할 수 있습니다.' });
+  if (existing.author !== author || existing.access_code !== access_code) {
+    return res.status(403).json({ error: '작성자 또는 전용 코드가 일치하지 않습니다.' });
   }
 
   const { error } = await supabase
@@ -233,7 +232,5 @@ router.delete('/:id/comments/:commentId', async (req, res) => {
 
   res.json({ message: '삭제 완료' });
 });
-
-
 
 module.exports = router;
