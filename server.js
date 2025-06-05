@@ -17,7 +17,9 @@ app.get('/', (req, res) => {
 
 // 게시글 라우트 등록
 const postRoutes = require('./routes/posts');
+// server.js
 app.use('/api/posts', postRoutes);
+
 
 // 서버 시작
 app.listen(PORT, () => {
